@@ -1,0 +1,100 @@
+<?php
+/*
+ * Plugin Name: Hoje Estou
+ * Plugin URI: http://lucasmoreira.com.br/plugin-wordpress-hoje-estou
+ * Description: Coloque um ícone ou texto no seu site para mostrar aos seus visitantes como você se sente hoje
+ * Version: 1.0
+ * Author: Lucas Moreira de Souza
+ * Author URI: http://lucasmoreira.com.br
+ *
+ * Copyright 2012 Lucas Moreira de Souza <moreirapontocom at gmail dot com>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301, USA.
+ */
+
+class hojeestou {
+
+    private static $wpdb;
+    private static $info;
+
+// OK    
+    public function inicializar() {
+        global $wpdb;
+
+        hojeestou::$wpdb = $wpdb;
+        hojeestou::$info['plugin_fpath'] = dirname(__FILE__);
+    }
+
+// OK
+    public function ativar() {
+        if (is_null(hojeestou::$wpdb))
+            hojeestou::inicializar();
+
+        $createTable = "CREATE TABLE ".$hojeestou::$wpdb->prefix."hoje_estou (`id` smallint(5) unsigned NOT NULL AUTO_INCREMENT,`name` varchar(100) NOT NULL DEFAULT 'Normal',`image` varchar(100) NOT NULL DEFAULT 'default.png', PRIMARY KEY (`id`)) ENGINE=MyISAM DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC";
+
+	$insertDefaultStatus = "INSERT INTO ".$hojeestou::$wpdb->prefix."hoje_estou (name,image) VALUES ('Normal','default.png');";
+
+        hojeestou::$wpdb->query($createTable);
+	hojeestou::$wpdb->query($insertDefaultStatus);
+	add_option('hoje_estou','1');
+   }
+
+// OK
+    public function desativar() {
+        if (is_null(hojeestou::$wpdb))
+            hojeestou::inicializar();
+            
+        $dropTable  = "DROP TABLE `".hojeestou::$wpdb->prefix."hoje_estou`";
+        hojeestou::$wpdb->query($dropTable);
+	delete_option('hoje_estou');
+    }
+
+    public function criar_menu() {
+        //add_menu_page('titulo classificador','classificador', 'Classificador', 10, 'classificador/supergroups.php');
+        if ( function_exists('add_menu_page') )
+            add_menu_page('titulo classificador', 'Classificador', 10, 'classificador/supergroups.php');
+        
+        if ( function_exists('add_submenu_page') ) {
+            add_submenu_page('classificador/supergroups.php', 'Conjuntos', 'Conjuntos', 10, 'classificador/supergroups.php');
+            add_submenu_page('classificador/supergroups.php', 'Grupos'   , 'Grupos'   , 10, 'classificador/groups.php');
+            add_submenu_page('classificador/supergroups.php', 'Itens'    , 'Itens'    , 10, 'classificador/itens.php');
+            add_submenu_page('classificador/supergroups.php', 'Sobre'    , 'Sobre'    , 10, 'classificador/about.php');
+        }
+    }
+    
+    
+    
+public function selectStatus($idStatus = '') {
+if ( empty( $idStatus ) )
+  update_option('hoje_estou',1);
+else {
+  $idStatus = trim($idStatus);
+  $idStatus = substr($idStatus,0,3);
+  if ( !is_number($idStatus) )
+    update_option('hoje_estou',1);
+  else
+    update_option('hoje_estou',$idStatus);
+}
+}
+
+} // end class
+
+$pathPlugin = substr(strrchr(dirname(__FILE__),DIRECTORY_SEPARATOR),1).DIRECTORY_SEPARATOR.basename(__FILE__);
+
+add_action('admin_menu', array('classificador', 'criar_menu'));
+register_activation_hook($pathPlugin, array('hojeestou', 'ativar'));      // activation
+register_deactivation_hook($pathPlugin, array('hojeestou', 'desativar')); // deactivation
+?>
